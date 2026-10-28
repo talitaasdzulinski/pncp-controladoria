@@ -58,12 +58,13 @@ def consultar(conexao, sql, params=None):
     cursor.close()
     return linhas
 
-
-def inserir_em_lote(conexao, sql_insert, linhas):
-    """Insere varias linhas de uma vez (executemany). 'sql_insert' usa %s."""
+def inserir_em_lote(conexao, sql_insert, linhas, commit=True):
+    """Insere varias linhas de uma vez (executemany). 'sql_insert' usa %s.
+    commit=False deixa a confirmacao para quem chamou (carga inteira em UMA transacao)."""
     if not linhas:
         return
     cursor = conexao.cursor()
     cursor.executemany(sql_insert, linhas)
-    conexao.commit()
+    if commit:
+        conexao.commit()
     cursor.close()
