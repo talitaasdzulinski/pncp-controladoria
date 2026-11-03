@@ -21,7 +21,7 @@ Power BI que responde às seis perguntas da Controladoria.
 10. [Dashboard e conclusões](#10-dashboard-e-conclusões) ·
 11. [Planejamento em Sprints](#11-planejamento-em-sprints) ·
 12. [Melhorias futuras](#12-melhorias-futuras) ·
-[Vídeo](#vídeo)
+    [Vídeo](#vídeo)
 
 ---
 
@@ -247,7 +247,7 @@ O que esse diagnóstico já mostra antes de tratar qualquer coisa:
 | Perfil do gasto (regra 8)  | Palavras inteiras (`\b`) na descrição + objeto: `OBRA(S)`, `CONSTRUÇÃO`, `REFORMA`, `ENGENHARIA` → Obras e engenharia; senão Material → Bens, Serviço → Serviços | Sem o `\b`, "cobrança" e "dobradiça" virariam obra.                                                                                                                           |
 | Órgão (regra 10)         | Uma linha por CNPJ na dimensão; nas perguntas, agrupa pelo **nome** padronizado                                                                                               | O mesmo órgão tem várias unidades (CNPJ): o DNIT tem 12.                                                                                                                       |
 | Linha −1 "Não Informado" | **Não** foi criada                                                                                                                                                            | O enunciado só a exige quando sobra FK sem destino, e nesta base toda linha da fato encontra a sua dimensão. As `sk` são `INT` com sinal, então dá para criar no futuro. |
-| Carga                      | Em lote (`executemany`), dimensões primeiro e fato depois, com `commit` só no final e `rollback` se o banco recusar alguma linha                                               | A fato só entra quando as dimensões que ela referencia já existem (FK), e nunca fica uma carga pela metade no banco.                                                             |
+| Carga                      | Em lote (`executemany`), dimensões primeiro e fato depois, com `commit` só no final e `rollback` se o banco recusar alguma linha                                             | A fato só entra quando as dimensões que ela referencia já existem (FK), e nunca fica uma carga pela metade no banco.                                                           |
 | Idempotência              | O `01_criar_banco.sql` derruba e recria as tabelas (fato primeiro, por causa da FK)                                                                                                | Rodar o pipeline de novo não duplica nada.                                                                                                                                       |
 
 **Discordâncias e observações sobre as regras** (o enunciado pede para anotar aqui):
@@ -262,16 +262,16 @@ O que esse diagnóstico já mostra antes de tratar qualquer coisa:
 
 ## 8. Conferência com a prova real (anexo 8)
 
-| Conferência                                |                                    Esperado |                             Obtido |
-| ------------------------------------------ | ------------------------------------------: | ---------------------------------: |
-| Itens com resultado / rejeitados / na fato |                          6.225 / 99 / 6.126 |                 6.225 / 99 / 6.126 |
-| Contratações · Fornecedores · Unidades     |                         1.962 · 2.652 · 363 |                1.962 · 2.652 · 363 |
-| Volume homologado                          |                         R$ 8.044.498.805,74 |                R$ 8.044.498.805,74 |
-| Estimado comparável / itens comparáveis    |                 R$ 6.867.663.469,91 / 5.457 |                               idem |
-| Economia                                   |                  R$ 992.861.686,95 (14,46%) |                               idem |
-| Itens com sobrepreço                       |                                          27 |                                 27 |
-| Ciclo médio / máximo / itens sem ciclo     |                            48,1 / 611 / 230 |                   48,1 / 611 / 230 |
-| Perfil (% do volume)                       |       Obras 60,8 · Serviços 36,6 · Bens 2,6 | idem (967 · 1.849 · 3.310 itens) |
+| Conferência                               |                                                   Esperado |                             Obtido |
+| ------------------------------------------ | ---------------------------------------------------------: | ---------------------------------: |
+| Itens com resultado / rejeitados / na fato |                                         6.225 / 99 / 6.126 |                 6.225 / 99 / 6.126 |
+| Contratações · Fornecedores · Unidades |                                      1.962 · 2.652 · 363 |              1.962 · 2.652 · 363 |
+| Volume homologado                          | R$ 8.044.498.805,74 |                R$ 8.044.498.805,74 |                                    |
+| Estimado comparável / itens comparáveis  |                                R$ 6.867.663.469,91 / 5.457 |                               idem |
+| Economia                                   |                                 R$ 992.861.686,95 (14,46%) |                               idem |
+| Itens com sobrepreço                      |                                                         27 |                                 27 |
+| Ciclo médio / máximo / itens sem ciclo   |                                           48,1 / 611 / 230 |                   48,1 / 611 / 230 |
+| Perfil (% do volume)                       |                   Obras 60,8 · Serviços 36,6 · Bens 2,6 | idem (967 · 1.849 · 3.310 itens) |
 
 ---
 
@@ -404,7 +404,7 @@ mesma ordem das Sprints.
 
 ## Vídeo
 
-[Review da Sprint — apresentação do projeto](COLE-AQUI-O-LINK-DO-DRIVE)
+[Review da Sprint — apresentação do projeto](https://drive.google.com/file/d/1o0Ja4wqDgepAT4hiuXPjnNAfwXI4WqWh/view?usp=sharing)
 
 ---
 
