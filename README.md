@@ -58,7 +58,7 @@ pelo professor.
 | Linguagens     | Python 3.12, SQL (MySQL 8)                                                                                                                                                                       |
 | Ferramentas    | MySQL Workbench, Power BI Desktop, Git/GitHub, Notion (Sprints)                                                                                                                                 |
 | Modelagem      | Modelo estrela (Star Schema): 1 fato + 4 dimensões, chaves substitutas (surrogate keys)                                                                                                         |
-| Técnicas      | Auditoria de qualidade, limpeza com expressões regulares, carga em lote (`executemany`), idempotência, integridade referencial (PK/FK), constraints (`CHECK`, `UNIQUE`) |
+| Técnicas      | Auditoria de qualidade, limpeza com expressões regulares, carga em lote (`executemany`) com `rollback`, idempotência, integridade referencial (PK/FK), constraints (`CHECK`, `UNIQUE`) |
 | Power BI       | Calendário em DAX, medidas explícitas com `VAR/RETURN`, `CALCULATE`, `DIVIDE`, iteradoras, indicadores (bookmarks) e dica de ferramenta (tooltip)                                        |
 | Boas práticas | Credenciais em `.env` (fora do código), `.gitignore`, modularização (`config.py` / `banco.py`), autoteste das funções de limpeza                                                    |
 
@@ -129,7 +129,7 @@ projeto/
 │   ├── auditoria.py         # Sprint 1: conta os problemas dos dados brutos
 │   ├── limpeza.py           # funções de limpeza + autoteste
 │   ├── montar_tabelas.py    # regras de negócio → fato e dimensões
-│   └── carregar.py          # carga em lote no MySQL + conferência
+│   └── carregar.py          # carga em lote no MySQL (com rollback) + conferência
 ├── sql/
 │   ├── 00_conferencia.sql   # confere o banco com a prova real (anexo 8)
 │   ├── 01_criar_banco.sql   # banco + 5 tabelas (PK, FK, UNIQUE, CHECK)
@@ -247,7 +247,7 @@ O que esse diagnóstico já mostra antes de tratar qualquer coisa:
 | Perfil do gasto (regra 8)  | Palavras inteiras (`\b`) na descrição + objeto: `OBRA(S)`, `CONSTRUÇÃO`, `REFORMA`, `ENGENHARIA` → Obras e engenharia; senão Material → Bens, Serviço → Serviços | Sem o `\b`, "cobrança" e "dobradiça" virariam obra.                                                                                                                           |
 | Órgão (regra 10)         | Uma linha por CNPJ na dimensão; nas perguntas, agrupa pelo **nome** padronizado                                                                                               | O mesmo órgão tem várias unidades (CNPJ): o DNIT tem 12.                                                                                                                       |
 | Linha −1 "Não Informado" | **Não** foi criada                                                                                                                                                            | O enunciado só a exige quando sobra FK sem destino, e nesta base toda linha da fato encontra a sua dimensão. As `sk` são `INT` com sinal, então dá para criar no futuro. |
-| Carga                      | Em lote (`executemany`): dimensões primeiro, fato depois                                                                                                                      | Mais rápido que inserir linha a linha, e a fato só entra quando as dimensões que ela referencia já existem (FK).                                                                 |
+| Carga                      | Em lote (`executemany`), dimensões primeiro e fato depois, com `commit` só no final e `rollback` se o banco recusar alguma linha                                               | A fato só entra quando as dimensões que ela referencia já existem (FK), e nunca fica uma carga pela metade no banco.                                                             |
 | Idempotência              | O `01_criar_banco.sql` derruba e recria as tabelas (fato primeiro, por causa da FK)                                                                                                | Rodar o pipeline de novo não duplica nada.                                                                                                                                       |
 
 **Discordâncias e observações sobre as regras** (o enunciado pede para anotar aqui):
