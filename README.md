@@ -7,6 +7,22 @@ compras públicas do **Portal Nacional de Contratações Públicas (PNCP)**, org
 resultado em um **modelo estrela** no MySQL e entrega um **dashboard executivo** no
 Power BI que responde às seis perguntas da Controladoria.
 
+## Sumário
+
+1. [O problema](#1-o-problema) ·
+2. [Tecnologias e técnicas](#2-tecnologias-e-técnicas) ·
+3. [Arquitetura](#3-arquitetura) ·
+4. [Estrutura do repositório](#4-estrutura-do-repositório) ·
+5. [Como executar](#5-como-executar) ·
+6. [Diagnóstico da origem](#6-diagnóstico-da-origem) ·
+7. [Decisões de projeto](#7-decisões-de-projeto) ·
+8. [Conferência com a prova real](#8-conferência-com-a-prova-real-anexo-8) ·
+9. [Perguntas de negócio](#9-perguntas-de-negócio-respondidas) ·
+10. [Dashboard e conclusões](#10-dashboard-e-conclusões) ·
+11. [Planejamento em Sprints](#11-planejamento-em-sprints) ·
+12. [Melhorias futuras](#12-melhorias-futuras) ·
+[Vídeo](#vídeo)
+
 ---
 
 ## 1. O problema
@@ -42,7 +58,7 @@ pelo professor.
 | Linguagens     | Python 3.12, SQL (MySQL 8)                                                                                                                                                                       |
 | Ferramentas    | MySQL Workbench, Power BI Desktop, Git/GitHub, Notion (Sprints)                                                                                                                                 |
 | Modelagem      | Modelo estrela (Star Schema): 1 fato + 4 dimensões, chaves substitutas (surrogate keys)                                                                                                         |
-| Técnicas      | Auditoria de qualidade, limpeza com expressões regulares, carga em lote (`executemany`) com `rollback`, idempotência, integridade referencial (PK/FK), constraints (`CHECK`, `UNIQUE`) |
+| Técnicas      | Auditoria de qualidade, limpeza com expressões regulares, carga em lote (`executemany`), idempotência, integridade referencial (PK/FK), constraints (`CHECK`, `UNIQUE`) |
 | Power BI       | Calendário em DAX, medidas explícitas com `VAR/RETURN`, `CALCULATE`, `DIVIDE`, iteradoras, indicadores (bookmarks) e dica de ferramenta (tooltip)                                        |
 | Boas práticas | Credenciais em `.env` (fora do código), `.gitignore`, modularização (`config.py` / `banco.py`), autoteste das funções de limpeza                                                    |
 
@@ -113,7 +129,7 @@ projeto/
 │   ├── auditoria.py         # Sprint 1: conta os problemas dos dados brutos
 │   ├── limpeza.py           # funções de limpeza + autoteste
 │   ├── montar_tabelas.py    # regras de negócio → fato e dimensões
-│   └── carregar.py          # carga em lote no MySQL (com rollback) + conferência
+│   └── carregar.py          # carga em lote no MySQL + conferência
 ├── sql/
 │   ├── 00_conferencia.sql   # confere o banco com a prova real (anexo 8)
 │   ├── 01_criar_banco.sql   # banco + 5 tabelas (PK, FK, UNIQUE, CHECK)
@@ -231,7 +247,7 @@ O que esse diagnóstico já mostra antes de tratar qualquer coisa:
 | Perfil do gasto (regra 8)  | Palavras inteiras (`\b`) na descrição + objeto: `OBRA(S)`, `CONSTRUÇÃO`, `REFORMA`, `ENGENHARIA` → Obras e engenharia; senão Material → Bens, Serviço → Serviços | Sem o `\b`, "cobrança" e "dobradiça" virariam obra.                                                                                                                           |
 | Órgão (regra 10)         | Uma linha por CNPJ na dimensão; nas perguntas, agrupa pelo **nome** padronizado                                                                                               | O mesmo órgão tem várias unidades (CNPJ): o DNIT tem 12.                                                                                                                       |
 | Linha −1 "Não Informado" | **Não** foi criada                                                                                                                                                            | O enunciado só a exige quando sobra FK sem destino, e nesta base toda linha da fato encontra a sua dimensão. As `sk` são `INT` com sinal, então dá para criar no futuro. |
-| Carga                      | Em lote (`executemany`), com `commit` só no final e `rollback` se o banco recusar alguma linha                                                                                | Nunca fica uma carga pela metade no banco.                                                                                                                                        |
+| Carga                      | Em lote (`executemany`): dimensões primeiro, fato depois                                                                                                                      | Mais rápido que inserir linha a linha, e a fato só entra quando as dimensões que ela referencia já existem (FK).                                                                 |
 | Idempotência              | O `01_criar_banco.sql` derruba e recria as tabelas (fato primeiro, por causa da FK)                                                                                                | Rodar o pipeline de novo não duplica nada.                                                                                                                                       |
 
 **Discordâncias e observações sobre as regras** (o enunciado pede para anotar aqui):
@@ -246,16 +262,16 @@ O que esse diagnóstico já mostra antes de tratar qualquer coisa:
 
 ## 8. Conferência com a prova real (anexo 8)
 
-| Conferência                               |                                                   Esperado |                             Obtido |
-| ------------------------------------------ | ---------------------------------------------------------: | ---------------------------------: |
-| Itens com resultado / rejeitados / na fato |                                         6.225 / 99 / 6.126 |                 6.225 / 99 / 6.126 |
-| Contratações · Fornecedores · Unidades |                                      1.962 · 2.652 · 363 |              1.962 · 2.652 · 363 |
-| Volume homologado                          | R$ 8.044.498.805,74 |                R$ 8.044.498.805,74 |                                    |
-| Estimado comparável / itens comparáveis  |                                R$ 6.867.663.469,91 / 5.457 |                               idem |
-| Economia                                   |                                 R$ 992.861.686,95 (14,46%) |                               idem |
-| Itens com sobrepreço                      |                                                         27 |                                 27 |
-| Ciclo médio / máximo / itens sem ciclo   |                                           48,1 / 611 / 230 |                   48,1 / 611 / 230 |
-| Perfil (% do volume)                       |                   Obras 60,8 · Serviços 36,6 · Bens 2,6 | idem (967 · 1.849 · 3.310 itens) |
+| Conferência                                |                                    Esperado |                             Obtido |
+| ------------------------------------------ | ------------------------------------------: | ---------------------------------: |
+| Itens com resultado / rejeitados / na fato |                          6.225 / 99 / 6.126 |                 6.225 / 99 / 6.126 |
+| Contratações · Fornecedores · Unidades     |                         1.962 · 2.652 · 363 |                1.962 · 2.652 · 363 |
+| Volume homologado                          |                         R$ 8.044.498.805,74 |                R$ 8.044.498.805,74 |
+| Estimado comparável / itens comparáveis    |                 R$ 6.867.663.469,91 / 5.457 |                               idem |
+| Economia                                   |                  R$ 992.861.686,95 (14,46%) |                               idem |
+| Itens com sobrepreço                       |                                          27 |                                 27 |
+| Ciclo médio / máximo / itens sem ciclo     |                            48,1 / 611 / 230 |                   48,1 / 611 / 230 |
+| Perfil (% do volume)                       |       Obras 60,8 · Serviços 36,6 · Bens 2,6 | idem (967 · 1.849 · 3.310 itens) |
 
 ---
 
@@ -275,9 +291,20 @@ Todas em `sql/02_perguntas.sql` e no dashboard, com os mesmos números.
 ## 10. Dashboard e conclusões
 
 O painel abre numa capa com os números principais e um atalho para cada pergunta. Cada
-página segue a mesma estrutura: **a pergunta → os números → a conclusão**. A navegação
-é feita por um menu retrátil (botão ☰, com indicadores) e a página de Modalidades tem uma
-dica de ferramenta personalizada.
+página segue a mesma estrutura: **a pergunta → os números → a conclusão**.
+
+**Navegação e design.** Para trocar de página, o botão ☰ abre um menu lateral com as seis
+perguntas, e o ✕ fecha (cada página tem o seu par de indicadores, com "Dados" desmarcado
+para não mexer nos filtros). A página atual aparece em laranja no menu, para a pessoa
+saber onde está. Usei o mesmo grid em todas as páginas: título e pergunta no topo,
+cartões com os números logo abaixo e os gráficos embaixo. As cores seguem uma regra só:
+azul-marinho como base, **laranja só no que eu quero destacar** e vermelho para alerta
+(como o sobrepreço). Ao passar o mouse nos gráficos de economia, modalidade, região e
+perfil, aparece uma dica de ferramenta com volume, economia e ciclo daquele recorte, e o
+título dela muda conforme o gráfico.
+
+O Calendário e todas as medidas DAX estão documentados em
+[`docs/powerbi_dax.md`](docs/powerbi_dax.md).
 
 ![Página inicial](docs/img/pagina0_inicio.png)
 
@@ -335,10 +362,31 @@ auditar onde está o dinheiro, o foco deve ser as obras.
 
 ## 11. Planejamento em Sprints
 
-Dividi o projeto em  8 Sprints, cada uma com um objetivo e um critério de "pronto" conferível na prova real. O planejamento ficou no Notion, com um quadro para o dia a dia e um cronograma.
+Dividi o projeto em 8 Sprints, cada uma com um objetivo e um critério de "pronto"
+conferível na prova real. O planejamento ficou no Notion, com um quadro para o dia a dia
+e um cronograma. Cada etapa terminou com um commit, então o histórico do GitHub segue a
+mesma ordem das Sprints.
 
 ![Sprints do projeto](docs/img/sprints.png)
 ![Sprints do projeto - parte 2](docs/img/sprints2.png)
+
+### O que mudou no caminho
+
+- **Troquei de ferramenta.** Comecei o planejamento no Jira, mas passei para o Notion,
+  que eu já usava e onde o cronograma ficava mais fácil de acompanhar.
+- **O Python e o banco foram mais rápidos do que eu esperava.** As Sprints 0 a 5 ficaram
+  prontas até 28/10. Algumas foram feitas depois da meia-noite, por isso alguns commits
+  têm a data do dia seguinte ao planejado.
+- **O Power BI levou mais tempo.** A capa, as 6 páginas, a dica de ferramenta e o menu
+  retrátil foram até 02/11 e ocuparam o fim de semana que eu tinha deixado livre. O menu
+  foi o mais trabalhoso, porque cada página precisa dos seus próprios indicadores.
+- **Problemas que eu resolvi:**
+  - a carga falhou porque meu `banco.py` ainda era a versão antiga, sem o parâmetro
+    `commit`; atualizei a função e a carga passou;
+  - o ranking de fornecedores dava 1 para todos, porque o `ALL` estava só na coluna do
+    CNPJ e o filtro do nome continuava valendo; troquei para `ALL(dim_fornecedor)`;
+  - o Top 15 de órgãos mostrava só 2, porque o Power BI escolhe os 15 antes de aplicar o
+    filtro de 5 itens; criei uma medida que já ignora os órgãos com menos de 5 itens.
 
 ---
 
@@ -347,7 +395,10 @@ Dividi o projeto em  8 Sprints, cada uma com um objetivo e um critério de "pron
 - **Extração direta da API do PNCP** com carga incremental por mês, em vez de recarregar a base inteira.
 - **Dicionário de sinônimos de órgãos** (sigla × nome por extenso), além de padronizar caixa e espaços.
 - **Classificação do perfil pelo catálogo oficial** (CATMAT/CATSER) quando o código vier preenchido.
-- **Índices** nas FKs da fato, para acelerar as consultas com `JOIN`.
+- **Testes automatizados** com `pytest` também para as regras de negócio (vencedor,
+  rejeitados, comparável), e não só para as funções de limpeza.
+- **Linha −1 "Não Informado"** nas dimensões, caso uma carga futura traga órgão ou
+  fornecedor sem cadastro.
 
 ---
 
