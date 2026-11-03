@@ -146,6 +146,7 @@ projeto/
 ```bash
 # 1. Clonar e instalar as dependências
 git clone https://github.com/talitaasdzulinski/pncp-controladoria
+cd pncp-controladoria
 pip install -r requirements.txt
 
 # 2. Configurar as credenciais
@@ -336,7 +337,7 @@ auditar onde está o dinheiro, o foco deve ser as obras.
 
 Dividi o projeto em  8 Sprints, cada uma com um objetivo e um critério de "pronto" conferível na prova real. O planejamento ficou no Notion, com um quadro para o dia a dia e um cronograma.
 
-![Sprints do projeto](docs/img/sprints1.png)
+![Sprints do projeto](docs/img/sprints.png)
 ![Sprints do projeto - parte 2](docs/img/sprints2.png)
 
 ---
